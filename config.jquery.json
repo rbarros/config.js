@@ -1,0 +1,27 @@
+{
+  "name": "config",
+  "title": "Config",
+  "description": "Class for setting javascript application.",
+  "version": "1.0.0",
+  "homepage": "https://github.com/rbarros/config.js",
+  "author": {
+    "name": "Ramon Barros",
+    "email": "contato@ramon-barros.com",
+    "url": "ramon-barros.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://rbarros@github.com/rbarros/config.js.git"
+  },
+  "bugs": "https://github.com/rbarros/config.js/issues",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/rbarros/config.js/blob/master/LICENSE-MIT"
+    }
+  ],
+  "dependencies": {
+    "jquery": "*"
+  },
+  "keywords": []
+}
