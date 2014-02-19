@@ -1,4 +1,4 @@
-(function($) {
+(function(window) {
   /*
     ======== A Handy Little QUnit Reference ========
     http://api.qunitjs.com/
@@ -34,4 +34,4 @@
     strictEqual(this.config.version, config.version, 'should be chainable');
   });
 
-}(jQuery));
+}(this));

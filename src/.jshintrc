@@ -11,5 +11,12 @@
   "boss": true,
   "eqnull": true,
   "browser": true,
-  "predef": ["jQuery"]
+  "predef": ["jQuery", "ActiveXObject"],
+  "globals": {
+    "console": true,
+    "jQuery": true,
+    "define": true,
+    "module": true,
+    "exports": true
+  }
 }

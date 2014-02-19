@@ -1,11 +1,6 @@
-/*
- * Config 2.2
- * https://github.com/rbarros/config.js
- *
- * Copyright (c) 2014 Ramon Barros
- * Licensed under the MIT license.
- */
-
+/*! Config - v1.0.0 - 2014-02-18
+* https://github.com/rbarros/config.js
+* Copyright (c) 2014 Ramon Barros; Licensed MIT */
 (function (root) {
   'use strict';
 
