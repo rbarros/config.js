@@ -20,18 +20,42 @@
       throws(block, [expected], [message])
   */
 
-  module('Config#init', {
+  module('Config', {
     // This will run before each test in this module.
     setup: function() {
       this.config = new Config();
+      this.baseurl = this.config.baseurl;
     }
   });
 
-  test('is init', function() {
+  test('test init', function() {
     expect(1);
     var config = new Config();
-    // Not a bad test to run on collection methods.
     strictEqual(this.config.version, config.version, 'should be chainable');
+  });
+
+  test('test fileExists', function() {
+    expect(4);
+    
+    throws(
+      function() {
+        throw this.config.fileExists();
+      },
+      "Você deve informar a url",
+      "Você deve informar a url."
+    );
+    throws(
+      function() {
+        throw this.config.fileExists();
+      },
+      "Você deve passar um objeto.",
+      "Você deve passar um objeto."
+    );
+    if (this.config.baseurl === 'file:///private') {
+      this.config.baseurl = 'http://localhost/config.js/';
+    }
+    equal(this.config.fileExists(this.config.baseurl + '/config/config.json'), false);
+    equal(this.config.fileExists(this.config.baseurl + '/test/config/config.json'), true);
   });
 
 }(this));

@@ -1,4 +1,4 @@
-/*! Config - v1.0.0 - 2014-02-18
+/*! Config - v1.0.0 - 2014-02-19
 * https://github.com/rbarros/config.js
 * Copyright (c) 2014 Ramon Barros; Licensed MIT */
 (function (root) {
@@ -21,10 +21,20 @@
       return this.init();
   };
 
+  /**
+   * Constructor
+   * @return {void}
+   */
   Config.prototype.init = function() {
     console.log('Config ' + this.version);
   };
 
+  /**
+   * Check for file exits
+   * @param  {string} url      file path
+   * @param  {string} dataType return type
+   * @return {mixed}           return false or ajax
+   */
   Config.prototype.fileExists = function(url, dataType) {
     var ajax = false;
     try {
@@ -40,14 +50,20 @@
     return ajax;
   };
 
+  /**
+   * Makes loading the json configuration file.
+   * @param  {string}   file     file path
+   * @param  {Function} callback function callback
+   * @return {json}             return json
+   */
   Config.prototype.loadJson = function(file, callback) {
     var json;
     try {
       if (!file) {
-        throw '[Config.loadJson] Você deve informar um arquivo.';
+        throw '[Config.loadJson] You must enter a file.';
       }
       json = this.fileExists(file, 'json');
-      if (json === false) { throw '[Config.loadJson] Arquivo [' + file + '] não encontrado.'; }
+      if (json === false) { throw '[Config.loadJson] File [' + file + '] not found.'; }
       if (typeof callback === 'function') {
           callback(json);
       }
@@ -57,6 +73,11 @@
     return json;
   };
 
+  /**
+   * Loading the application settings
+   * @param  {string} directory The configuration file directory
+   * @return {void}
+   */
   Config.prototype.loadConfig = function(directory) {
     this.settings = this.loadJson(this.baseurl + directory + '/config.json');
     if (typeof this.settings === 'object') {
@@ -65,13 +86,17 @@
         this.language[0] = {};
         this.language[0].def = lang;
         if(this.settings.system.debug === true){
-            localStorage.debug = true;
+            root.localStorage.debug = true;
         }else{
-            delete localStorage.debug;
+            delete root.localStorage.debug;
         }
     }
   };
 
+  /**
+   * Identifies the browser
+   * @return {boolean} return true if the browser is IE
+   */
   Config.prototype.browser = function() {
     var browser = root.navigator.appName,
         version = root.navigator.appVersion,
@@ -80,6 +105,75 @@
     if (browser === "Microsoft Internet Explorer" && browser_version >= 7) {
       return true;
     }
+  };
+
+  /**
+   * Creates a cookie by passing the name, amount and date to expire.
+   * @param {string} c_name name defined cookie
+   * @param {mixed} value  value the cookie
+   * @param {integer} day    date to expire
+   */
+  Config.setCookie = function(c_name, value, day) {
+    var exdate = new Date(),
+        d = day || 1;
+    exdate.setHours(exdate.getHours() + d);
+    var c_value = root.escape(value) + "; expires=" + exdate.toUTCString();
+    root.document.cookie = c_name + "=" + c_value;
+  };
+
+  /**
+   * Retrives the stored cookie
+   * @param  {string} c_name name defined cookie
+   * @return {mixed}        return value the cookie
+   */
+  Config.getCookie = function(c_name) {
+    var i, x, y, ARRcookies = root.document.cookie.split(";"),
+        r;
+
+    for (i = 0; i < ARRcookies.length; i++) {
+        x = ARRcookies[i].substr(0, ARRcookies[i].indexOf("="));
+        y = ARRcookies[i].substr(ARRcookies[i].indexOf("=") + 1);
+        x = x.replace(/^\s+|\s+$/g, "");
+        if (x === c_name) {
+            r = root.unescape(y);
+        }
+    }
+    return r;
+  };
+
+  var emptyArray = [], slice = emptyArray.slice,
+      isArray = Array.isArray ||
+      function(object){ return object instanceof Array; };
+
+  function isPlainObject(obj) {
+    return typeof obj === "object" && !(obj !== null && obj === obj.window) && Object.getPrototypeOf(obj) === Object.prototype;
+  }
+
+  function extend(target, source, deep) {
+    var key;
+    for (key in source) {
+      if (deep && (isPlainObject(source[key]) || isArray(source[key]))) {
+        if (isPlainObject(source[key]) && !isPlainObject(target[key])) {
+          target[key] = {};
+        }
+        if (isArray(source[key]) && !isArray(target[key])) {
+          target[key] = [];
+          extend(target[key], source[key], deep);
+        }
+      } else if (source[key] !== undefined) {
+        target[key] = source[key];
+      }
+    }
+  }
+
+  Config.prototype.extend = function(target) {
+    var deep, args = slice.call(arguments, 1);
+    if (typeof target === 'boolean') {
+      deep = target;
+      target = args.shift();
+    }
+    args.forEach(function(arg){ extend(target, arg, deep); });
+    return target;
   };
 
   /**

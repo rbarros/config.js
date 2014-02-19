@@ -1,0 +1,10 @@
+{
+    "debug":true,
+    "language":"pt",
+    "restfulUrl":"../src/",
+    "defaultPage":"home",
+    "perPage":12,
+    "system": {
+        "type":"client",
+    }
+}

@@ -11,9 +11,11 @@
 
   var Config = function() {
       this.version = "3.0";
-      this.system = {};
       this.language = [];
-      this.baseurl = root.location.protocol + '//' + root.location.host + root.location.pathname;
+      this.segment = window.location.pathname.split('/');
+      this.segment.shift();
+      this.file = this.segment[this.segment.length-1] || 'index.html';
+      this.baseurl = window.location.protocol + '//' + window.location.host + '/' + this.segment[0];
       this.client = {};
       this.setajax = {};
       this.settings = {};
@@ -26,11 +28,24 @@
       return this.init();
   };
 
+  /**
+   * Constructor
+   * @return {void}
+   */
   Config.prototype.init = function() {
     console.log('Config ' + this.version);
   };
 
+  /**
+   * Check for file exits
+   * @param  {string} url      file path
+   * @param  {string} dataType return type
+   * @return {mixed}           return false or ajax
+   */
   Config.prototype.fileExists = function(url, dataType) {
+    if (!url) {
+      return this;
+    }
     var ajax = false;
     try {
       ajax = this.ajax({
@@ -39,20 +54,32 @@
         dataType: dataType,
         data: ''
       });
+      if (ajax.status === 404) {
+        ajax = false;
+      }
+      if (ajax.status === 200 && ajax.statusText === 'OK') {
+        ajax = true;
+      }
     } catch(e) {
       throw 'Ajax method not implemented!';
     }
     return ajax;
   };
 
+  /**
+   * Makes loading the json configuration file.
+   * @param  {string}   file     file path
+   * @param  {Function} callback function callback
+   * @return {json}             return json
+   */
   Config.prototype.loadJson = function(file, callback) {
     var json;
     try {
       if (!file) {
-        throw '[Config.loadJson] Você deve informar um arquivo.';
+        throw '[Config.loadJson] You must enter a file.';
       }
       json = this.fileExists(file, 'json');
-      if (json === false) { throw '[Config.loadJson] Arquivo [' + file + '] não encontrado.'; }
+      if (json === false) { throw '[Config.loadJson] File [' + file + '] not found.'; }
       if (typeof callback === 'function') {
           callback(json);
       }
@@ -62,21 +89,29 @@
     return json;
   };
 
+  /**
+   * Loading the application settings
+   * @param  {string} directory The configuration file directory
+   * @return {void}
+   */
   Config.prototype.loadConfig = function(directory) {
     this.settings = this.loadJson(this.baseurl + directory + '/config.json');
     if (typeof this.settings === 'object') {
-        this.system = this.settings.system.type || "Type system not found!";
-        var lang = this.settings.system.language || "pt";
+        var lang = this.settings.language || "pt";
         this.language[0] = {};
         this.language[0].def = lang;
-        if(this.settings.system.debug === true){
-            localStorage.debug = true;
+        if(this.settings.debug === true){
+            root.localStorage.debug = true;
         }else{
-            delete localStorage.debug;
+            delete root.localStorage.debug;
         }
     }
   };
 
+  /**
+   * Identifies the browser
+   * @return {boolean} return true if the browser is IE
+   */
   Config.prototype.browser = function() {
     var browser = root.navigator.appName,
         version = root.navigator.appVersion,
@@ -85,6 +120,155 @@
     if (browser === "Microsoft Internet Explorer" && browser_version >= 7) {
       return true;
     }
+  };
+
+  /**
+   * Creates a cookie by passing the name, amount and date to expire.
+   * @param {string} c_name name defined cookie
+   * @param {mixed} value  value the cookie
+   * @param {integer} day    date to expire
+   */
+  Config.setCookie = function(c_name, value, day) {
+    var exdate = new Date(),
+        d = day || 1;
+    exdate.setHours(exdate.getHours() + d);
+    var c_value = root.escape(value) + "; expires=" + exdate.toUTCString();
+    root.document.cookie = c_name + "=" + c_value;
+  };
+
+  /**
+   * Retrives the stored cookie
+   * @param  {string} c_name name defined cookie
+   * @return {mixed}        return value the cookie
+   */
+  Config.getCookie = function(c_name) {
+    var i, x, y, ARRcookies = root.document.cookie.split(";"),
+        r;
+
+    for (i = 0; i < ARRcookies.length; i++) {
+        x = ARRcookies[i].substr(0, ARRcookies[i].indexOf("="));
+        y = ARRcookies[i].substr(ARRcookies[i].indexOf("=") + 1);
+        x = x.replace(/^\s+|\s+$/g, "");
+        if (x === c_name) {
+            r = root.unescape(y);
+        }
+    }
+    return r;
+  };
+
+  var emptyArray = [], slice = emptyArray.slice,
+      isArray = Array.isArray ||
+      function(object){ return object instanceof Array; };
+
+  function isPlainObject(obj) {
+    return typeof obj === "object" && !(obj !== null && obj === obj.window) && Object.getPrototypeOf(obj) === Object.prototype;
+  }
+
+  function extend(target, source, deep) {
+    var key;
+    for (key in source) {
+      if (deep && (isPlainObject(source[key]) || isArray(source[key]))) {
+        if (isPlainObject(source[key]) && !isPlainObject(target[key])) {
+          target[key] = {};
+        }
+        if (isArray(source[key]) && !isArray(target[key])) {
+          target[key] = [];
+          extend(target[key], source[key], deep);
+        }
+      } else if (source[key] !== undefined) {
+        target[key] = source[key];
+      }
+    }
+  }
+
+  Config.prototype.extend = function(target) {
+    var deep, args = slice.call(arguments, 1);
+    if (typeof target === 'boolean') {
+      deep = target;
+      target = args.shift();
+    }
+    args.forEach(function(arg){ extend(target, arg, deep); });
+    return target;
+  };
+
+  Config.prototype.css = function(file) {
+    var link = document.createElement("link");
+        link.type = "text/css";
+        link.rel = "stylesheet";
+        link.href = file;
+        this.tagHead(link, "prepend");
+  };
+
+  Config.prototype.js = function(file) {
+    var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = file;
+        script.async = true;
+        this.tagHead(script);
+  };
+
+  Config.prototype.tagHead = function(el, type) {
+    switch (type) {
+      case "prepend":
+        var head = root.document.getElementsByTagName("head")[0];
+        head.insertBefore(el, head.firstChild);
+        break;
+      case "append":
+        document.getElementsByTagName("head")[0].appendChild(el);
+        break;
+      default:
+        document.getElementsByTagName("head")[0].appendChild(el);
+        break;
+    }
+  };
+
+  Config.prototype.loadTranslate = function() {
+    var lang = this.language[0].def,
+        pagination = this.loadJson(this.baseurl + '../app/language/' + lang + '/pagination.json'),
+        validation = this.loadJson(this.baseurl + '../app/language/' + lang + '/validation.json');
+    if (pagination !== 'undefined') {
+        this.language.push(pagination);
+    }
+    if (validation !== 'undefined') {
+        this.language.push(validation);
+    }
+  };
+
+  Config.prototype.translate = function(key, attribute, lang) {
+    var x, l = lang || 0, translate = null,patt;
+    if (this.language.length <= 1 && l === 0) {
+        this.loadTranslate();
+        this.translate(key,attribute,1);
+    }
+    for (x in this.language) {
+        if (this.language[x].hasOwnProperty(key)) {
+            translate = this.language[x][key];
+            if(attribute){
+                patt=/([:][A-z]+)/g;
+                translate=translate.replace(patt,attribute);
+            }
+
+        }
+    }
+    if (translate) {
+        return translate;
+    } else {
+        return "Tradução não encontrada.";
+    }
+  };
+
+  Config.prototype.jsonResponse = function(code) {
+    var jsonCodes = [];
+        jsonCodes[400] = 'Unrecognized command';
+        jsonCodes[401] = 'Permission denied';
+        jsonCodes[402] = 'Missing argument';
+        jsonCodes[401] = 'Incorrect password';
+        jsonCodes[404] = 'Account not found';
+        jsonCodes[405] = 'Email not validated';
+        jsonCodes[408] = 'Token expired';
+        jsonCodes[411] = 'Insufficient privileges';
+        jsonCodes[500] = 'Internal server error';
+        return jsonCodes[code];
   };
 
   /**
@@ -130,7 +314,7 @@
                   this.setajax.success(this.setajax.responseText);
               }
           } else {
-              throw 'Você deve passar um objeto. ';
+              throw 'Você deve passar um objeto.';
           }
       } catch(e) {
           if (this.setajax.error && typeof this.setajax.error === 'function') {
