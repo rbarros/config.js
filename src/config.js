@@ -78,13 +78,12 @@
       if (!file) {
         throw '[Config.loadJson] You must enter a file.';
       }
-      json = this.fileExists(file, 'json');
-      if (json === false) { throw '[Config.loadJson] File [' + file + '] not found.'; }
+      if (this.fileExists(file, 'json') === false) { throw '[Config.loadJson] File [' + file + '] not found.'; }
       if (typeof callback === 'function') {
-          callback(json);
+          callback(this.setajax.responseText);
       }
     } catch(e) {
-      console.warn(e);
+      return e;
     }
     return json;
   };
