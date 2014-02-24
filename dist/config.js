@@ -1,4 +1,4 @@
-/*! Config - v1.0.0 - 2014-02-19
+/*! Config - v1.0.0 - 2014-02-24
 * https://github.com/rbarros/config.js
 * Copyright (c) 2014 Ramon Barros; Licensed MIT */
 (function (root) {
@@ -6,9 +6,12 @@
 
   var Config = function() {
       this.version = "3.0";
-      this.system = {};
       this.language = [];
-      this.baseurl = root.location.protocol + '//' + root.location.host + root.location.pathname;
+      this.segment = window.location.pathname.split('/');
+      this.segment.shift();
+      this.file = this.segment[this.segment.length-1] || 'index.html';
+      this.baseurl = window.location.protocol + '//' + window.location.host + '/' + this.segment[0];
+      this.fileconfig = 'config.json';
       this.client = {};
       this.setajax = {};
       this.settings = {};
@@ -36,6 +39,9 @@
    * @return {mixed}           return false or ajax
    */
   Config.prototype.fileExists = function(url, dataType) {
+    if (!url) {
+      return this;
+    }
     var ajax = false;
     try {
       ajax = this.ajax({
@@ -44,6 +50,12 @@
         dataType: dataType,
         data: ''
       });
+      if (ajax.status === 404) {
+        ajax = false;
+      }
+      if (ajax.status === 200 && ajax.statusText === 'OK') {
+        ajax = true;
+      }
     } catch(e) {
       throw 'Ajax method not implemented!';
     }
@@ -57,20 +69,18 @@
    * @return {json}             return json
    */
   Config.prototype.loadJson = function(file, callback) {
-    var json;
     try {
       if (!file) {
         throw '[Config.loadJson] You must enter a file.';
       }
-      json = this.fileExists(file, 'json');
-      if (json === false) { throw '[Config.loadJson] File [' + file + '] not found.'; }
+      if (this.fileExists(file, 'json') === false) { throw '[Config.loadJson] File [' + file + '] not found.'; }
       if (typeof callback === 'function') {
-          callback(json);
+          callback(this.setajax.responseText);
       }
     } catch(e) {
-      console.warn(e);
+      return e;
     }
-    return json;
+    return this.setajax.responseText;
   };
 
   /**
@@ -79,18 +89,20 @@
    * @return {void}
    */
   Config.prototype.loadConfig = function(directory) {
-    this.settings = this.loadJson(this.baseurl + directory + '/config.json');
-    if (typeof this.settings === 'object') {
-        this.system = this.settings.system.type || "Type system not found!";
-        var lang = this.settings.system.language || "pt";
-        this.language[0] = {};
-        this.language[0].def = lang;
-        if(this.settings.system.debug === true){
-            root.localStorage.debug = true;
-        }else{
-            delete root.localStorage.debug;
-        }
+    if (!directory || !this.fileconfig) {
+      return this;
     }
+    this.settings = this.loadJson(this.baseurl + '/' + directory + '/' + this.fileconfig);
+    if (typeof this.settings === 'object') {
+      this.language[0] = {};
+      this.language[0].def = this.settings.language || "pt";
+      if(this.settings.debug === true){
+          root.localStorage.debug = true;
+      }else{
+          delete root.localStorage.debug;
+      }
+    }
+    return this.settings;
   };
 
   /**
@@ -113,7 +125,7 @@
    * @param {mixed} value  value the cookie
    * @param {integer} day    date to expire
    */
-  Config.setCookie = function(c_name, value, day) {
+  Config.prototype.setCookie = function(c_name, value, day) {
     var exdate = new Date(),
         d = day || 1;
     exdate.setHours(exdate.getHours() + d);
@@ -126,7 +138,7 @@
    * @param  {string} c_name name defined cookie
    * @return {mixed}        return value the cookie
    */
-  Config.getCookie = function(c_name) {
+  Config.prototype.getCookie = function(c_name) {
     var i, x, y, ARRcookies = root.document.cookie.split(";"),
         r;
 
@@ -176,6 +188,86 @@
     return target;
   };
 
+  Config.prototype.css = function(file) {
+    var link = document.createElement("link");
+        link.type = "text/css";
+        link.rel = "stylesheet";
+        link.href = file;
+        this.tagHead(link, "prepend");
+  };
+
+  Config.prototype.js = function(file) {
+    var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = file;
+        script.async = true;
+        this.tagHead(script);
+  };
+
+  Config.prototype.tagHead = function(el, type) {
+    switch (type) {
+      case "prepend":
+        var head = root.document.getElementsByTagName("head")[0];
+        head.insertBefore(el, head.firstChild);
+        break;
+      case "append":
+        document.getElementsByTagName("head")[0].appendChild(el);
+        break;
+      default:
+        document.getElementsByTagName("head")[0].appendChild(el);
+        break;
+    }
+  };
+
+  Config.prototype.loadTranslate = function() {
+    var lang = this.language[0].def,
+        pagination = this.loadJson(this.baseurl + '../app/language/' + lang + '/pagination.json'),
+        validation = this.loadJson(this.baseurl + '../app/language/' + lang + '/validation.json');
+    if (pagination !== 'undefined') {
+        this.language.push(pagination);
+    }
+    if (validation !== 'undefined') {
+        this.language.push(validation);
+    }
+  };
+
+  Config.prototype.translate = function(key, attribute, lang) {
+    var x, l = lang || 0, translate = null,patt;
+    if (this.language.length <= 1 && l === 0) {
+        this.loadTranslate();
+        this.translate(key,attribute,1);
+    }
+    for (x in this.language) {
+        if (this.language[x].hasOwnProperty(key)) {
+            translate = this.language[x][key];
+            if(attribute){
+                patt=/([:][A-z]+)/g;
+                translate=translate.replace(patt,attribute);
+            }
+
+        }
+    }
+    if (translate) {
+        return translate;
+    } else {
+        return "Tradução não encontrada.";
+    }
+  };
+
+  Config.prototype.jsonResponse = function(code) {
+    var jsonCodes = [];
+        jsonCodes[400] = 'Unrecognized command';
+        jsonCodes[401] = 'Permission denied';
+        jsonCodes[402] = 'Missing argument';
+        jsonCodes[401] = 'Incorrect password';
+        jsonCodes[404] = 'Account not found';
+        jsonCodes[405] = 'Email not validated';
+        jsonCodes[408] = 'Token expired';
+        jsonCodes[411] = 'Insufficient privileges';
+        jsonCodes[500] = 'Internal server error';
+        return jsonCodes[code];
+  };
+
   /**
    * Ajax
    * @param {object} s settings to ajax
@@ -219,7 +311,7 @@
                   this.setajax.success(this.setajax.responseText);
               }
           } else {
-              throw 'Você deve passar um objeto. ';
+              throw 'Você deve passar um objeto.';
           }
       } catch(e) {
           if (this.setajax.error && typeof this.setajax.error === 'function') {

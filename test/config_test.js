@@ -67,6 +67,8 @@
   });
 
   test('test ajax not implemented', function() {
+    var ajax = Config.prototype.ajax;
+    expect(1);
     throws(
       function() {
         delete Config.prototype.ajax;
@@ -74,9 +76,11 @@
       },
       "Ajax method not implemented!"
     );
+    Config.prototype.ajax = ajax;
   });
 
   test('test loadJson not set file or not found', function() {
+    expect(2);
     throws(
       function() {
         throw this.config.loadJson();
@@ -92,14 +96,62 @@
     );
   });
 
-  /*
-  test('test callback loadJson', function() {
-    var self = this, json = false;
-    this.config.loadJson('config/config.json', function(j) {
-      json = j;
-      equal(json, self.json, 'okay');
+  
+  test('test file json equal - loadJson', function() {
+    expect(1);
+    var self = this;
+    this.config.loadJson(this.config.baseurl + '/test/config/config.json', function(json) {
+      deepEqual(json, self.json, 'okay');
     });
   });
+
+  test('test loadConfig', function() {
+    expect(1);
+    deepEqual(this.config.loadConfig('test/config'), this.json, 'okay');
+  });
+
+  test('test cookies', function() {
+    this.config.setCookie('config.js', this.config.version, 1);
+    equal(this.config.version, this.config.getCookie('config.js'));
+  });
+
+  test('test extend - Merge object2 into object1', function() {
+    var object1 = {
+      apple: 0,
+      banana: { weight: 52, price: 100 },
+      cherry: 97
+    };
+    var object2 = {
+      banana: { price: 200 },
+      durian: 100
+    };
+    deepEqual({"apple":0,"banana":{"price":200},"cherry":97,"durian":100}, this.config.extend(object1, object2), 'okay');
+  });
+
+  /*
+  test('test extend - Merge object2 into object1, recursively', function() {
+    var object1 = {
+      apple: 0,
+      banana: { weight: 52, price: 100 },
+      cherry: 97
+    };
+    var object2 = {
+      banana: { price: 200 },
+      durian: 100
+    };
+    deepEqual({"apple":0,"banana":{"weight":52,"price":200},"cherry":97,"durian":100}, this.config.extend(true, object1, object2), 'okay');
+  });
   */
+
+  test('test extend - Merge defaults and options, without modifying defaults', function() {
+    var defaults = { validate: false, limit: 5, name: "foo" };
+    var options = { validate: true, name: "bar" };
+
+    // Merge defaults and options, without modifying defaults
+    var settings = this.config.extend( {}, defaults, options );
+    deepEqual({"validate":true,"limit":5,"name":"bar"}, settings);
+  });
+
+
 
 }(this));
