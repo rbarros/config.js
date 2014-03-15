@@ -7,32 +7,32 @@
  */
 
 (function (root) {
-  'use strict';
-
-  var Config = function() {
-      this.version = "3.0";
-      this.language = [];
-      this.segment = window.location.pathname.split('/');
-      this.segment.shift();
-      this.file = this.segment[this.segment.length-1] || 'index.html';
-      this.baseurl = window.location.protocol + '//' + window.location.host + '/' + this.segment[0];
-      this.client = {};
-      this.setajax = {};
-      this.settings = {};
-      this.xmlhttp = {};
-      this.restfulUrl = "../src/";
-      this.api = {};
-      this.errors = {};
-      this.html = {};
-
-      return this.init();
-  };
+    'use strict';
+    
+    var Config = function () {
+        this.version = "3.0";
+        this.language = [];
+        this.segment = root.location.pathname.split('/');
+        this.segment.shift();
+        this.file = this.segment[this.segment.length - 1] || 'index.html';
+        this.baseurl = root.location.protocol + '//' + root.location.host + '/' + this.segment[0];
+        this.pathApp = '../app/';
+        this.client = {};
+        this.setajax = {};
+        this.settings = {};
+        this.xmlhttp = {};
+        this.restfulUrl = "../src/";
+        this.api = {};
+        this.errors = {};
+        this.html = {};
+        return this.init();
+    };
 
   /**
    * Constructor
    * @return {void}
    */
-  Config.prototype.init = function() {
+  Config.prototype.init = function () {
     console.log('Config ' + this.version);
   };
 
@@ -42,11 +42,11 @@
    * @param  {string} dataType return type
    * @return {mixed}           return false or ajax
    */
-  Config.prototype.fileExists = function(url, dataType) {
-    if (!url) {
-      return this;
-    }
+  Config.prototype.fileExists = function (url, dataType) {
     var ajax = false;
+    if (!url) {
+        return this;
+    }
     try {
       ajax = this.ajax({
         method: 'GET',
@@ -190,6 +190,11 @@
     return target;
   };
 
+  /**
+   * Add css link
+   * @param  {string} file css file
+   * @return {void}
+   */
   Config.prototype.css = function(file) {
     var link = document.createElement("link");
         link.type = "text/css";
@@ -197,7 +202,12 @@
         link.href = file;
         this.tagHead(link, "prepend");
   };
-
+  
+  /**
+   * Add js file
+   * @param {string} file js file
+   * @return {void}
+   */
   Config.prototype.js = function(file) {
     var script = document.createElement('script');
         script.type = 'text/javascript';
@@ -205,7 +215,13 @@
         script.async = true;
         this.tagHead(script);
   };
-
+  
+  /**
+   * Create child element within the head tag
+   * @param {string} el element
+   * @param {string} type prepend or append
+   * @return {void}
+   */
   Config.prototype.tagHead = function(el, type) {
     switch (type) {
       case "prepend":
@@ -221,10 +237,14 @@
     }
   };
 
+  /**
+   * Loading the translation files
+   * @return {void}
+   */
   Config.prototype.loadTranslate = function() {
     var lang = this.language[0].def,
-        pagination = this.loadJson(this.baseurl + '../app/language/' + lang + '/pagination.json'),
-        validation = this.loadJson(this.baseurl + '../app/language/' + lang + '/validation.json');
+        pagination = this.loadJson(this.baseurl + this.pathApp + 'language/' + lang + '/pagination.json'),
+        validation = this.loadJson(this.baseurl + this.pathApp + 'language/' + lang + '/validation.json');
     if (pagination !== 'undefined') {
         this.language.push(pagination);
     }
@@ -232,7 +252,7 @@
         this.language.push(validation);
     }
   };
-
+  
   Config.prototype.translate = function(key, attribute, lang) {
     var x, l = lang || 0, translate = null,patt;
     if (this.language.length <= 1 && l === 0) {
@@ -337,7 +357,7 @@
     root['Config'] = Config;
   }
 
-    // AMD define happens at the end for compatibility with AMD loaders
+  // AMD define happens at the end for compatibility with AMD loaders
   // that don't enforce next-turn semantics on modules.
   if (typeof define === 'function' && define.amd) {
     define('config', function() {
