@@ -9,13 +9,14 @@
 (function (root) {
     'use strict';
     
-    var Config = function () {
+   var Config = function () {
         this.version = "3.0";
         this.language = [];
         this.segment = root.location.pathname.split('/');
         this.segment.shift();
         this.file = this.segment[this.segment.length - 1] || 'index.html';
         this.baseurl = root.location.protocol + '//' + root.location.host + '/' + this.segment[0];
+        this.fileconfig = 'config.json';
         this.pathApp = '../app/';
         this.client = {};
         this.setajax = {};
@@ -25,8 +26,9 @@
         this.api = {};
         this.errors = {};
         this.html = {};
+
         return this.init();
-    };
+   };
 
   /**
    * Constructor
@@ -73,7 +75,6 @@
    * @return {json}             return json
    */
   Config.prototype.loadJson = function(file, callback) {
-    var json;
     try {
       if (!file) {
         throw '[Config.loadJson] You must enter a file.';
@@ -85,7 +86,7 @@
     } catch(e) {
       return e;
     }
-    return json;
+    return this.setajax.responseText;
   };
 
   /**
@@ -94,17 +95,20 @@
    * @return {void}
    */
   Config.prototype.loadConfig = function(directory) {
-    this.settings = this.loadJson(this.baseurl + directory + '/config.json');
-    if (typeof this.settings === 'object') {
-        var lang = this.settings.language || "pt";
-        this.language[0] = {};
-        this.language[0].def = lang;
-        if(this.settings.debug === true){
-            root.localStorage.debug = true;
-        }else{
-            delete root.localStorage.debug;
-        }
+    if (!directory || !this.fileconfig) {
+      return this;
     }
+    this.settings = this.loadJson(this.baseurl + '/' + directory + '/' + this.fileconfig);
+    if (typeof this.settings === 'object') {
+      this.language[0] = {};
+      this.language[0].def = this.settings.language || "pt";
+      if(this.settings.debug === true){
+          root.localStorage.debug = true;
+      }else{
+          delete root.localStorage.debug;
+      }
+    }
+    return this.settings;
   };
 
   /**
@@ -127,7 +131,7 @@
    * @param {mixed} value  value the cookie
    * @param {integer} day    date to expire
    */
-  Config.setCookie = function(c_name, value, day) {
+  Config.prototype.setCookie = function(c_name, value, day) {
     var exdate = new Date(),
         d = day || 1;
     exdate.setHours(exdate.getHours() + d);
@@ -140,7 +144,7 @@
    * @param  {string} c_name name defined cookie
    * @return {mixed}        return value the cookie
    */
-  Config.getCookie = function(c_name) {
+  Config.prototype.getCookie = function(c_name) {
     var i, x, y, ARRcookies = root.document.cookie.split(";"),
         r;
 
