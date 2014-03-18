@@ -1,5 +1,5 @@
 /*
- * Config 2.2
+ * Config 1.0
  * https://github.com/rbarros/config.js
  *
  * Copyright (c) 2014 Ramon Barros
@@ -10,7 +10,7 @@
   'use strict';
 
   var Config = function() {
-      this.version = "3.0";
+      this.version = "1.0";
       this.language = [];
       this.segment = window.location.pathname.split('/');
       this.segment.shift();
@@ -44,10 +44,10 @@
    * @return {mixed}           return false or ajax
    */
   Config.prototype.fileExists = function(url, dataType) {
+    var self = this, ajax = false;
     if (!url) {
       return this;
     }
-    var ajax = false;
     try {
       ajax = this.ajax({
         method: 'GET',
@@ -55,6 +55,7 @@
         dataType: dataType,
         data: ''
       });
+      this.setajax = this.extend( {}, self.setajax, ajax );
       if (ajax.status === 404) {
         ajax = false;
       }
