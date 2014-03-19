@@ -55,7 +55,7 @@
         dataType: dataType,
         data: ''
       });
-      this.setajax = this.extend( {}, self.setajax, ajax );
+      this.setajax = this.extend( {}, ajax, self.setajax );
       if (ajax.status === 404) {
         ajax = false;
       }
@@ -159,9 +159,22 @@
     return r;
   };
 
-  var emptyArray = [], slice = emptyArray.slice,
+  var emptyArray = [], slice = emptyArray.slice, class2type = {}, core_toString = class2type.toString,
       isArray = Array.isArray ||
       function(object){ return object instanceof Array; };
+
+  function type( obj ) {
+    if ( obj == null ) {
+      return String( obj );
+    }
+    return typeof obj === "object" || typeof obj === "function" ?
+      class2type[ core_toString.call(obj) ] || "object" :
+      typeof obj;
+  }
+
+  function isFunction( obj ) {
+    return type(obj) === "function";
+  }
 
   function isPlainObject(obj) {
     return typeof obj === "object" && !(obj !== null && obj === obj.window) && Object.getPrototypeOf(obj) === Object.prototype;
@@ -176,8 +189,8 @@
         }
         if (isArray(source[key]) && !isArray(target[key])) {
           target[key] = [];
-          extend(target[key], source[key], deep);
         }
+        extend(target[key], source[key], deep);
       } else if (source[key] !== undefined) {
         target[key] = source[key];
       }
@@ -189,6 +202,9 @@
     if (typeof target === 'boolean') {
       deep = target;
       target = args.shift();
+    }
+    if ( typeof target !== "object" && !isFunction(target) ) {
+      target = {};
     }
     args.forEach(function(arg){ extend(target, arg, deep); });
     return target;

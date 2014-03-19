@@ -1,4 +1,4 @@
-(function(window) {
+(function(window, _$) {
   /*
     ======== A Handy Little QUnit Reference ========
     http://api.qunitjs.com/
@@ -35,7 +35,7 @@
           "defaultPage":"home",
           "perPage":12,
           "system": {
-              "type":"client",
+              "type":"client"
           }
       };
     }
@@ -128,7 +128,6 @@
     deepEqual({"apple":0,"banana":{"price":200},"cherry":97,"durian":100}, this.config.extend(object1, object2), 'okay');
   });
 
-  /*
   test('test extend - Merge object2 into object1, recursively', function() {
     var object1 = {
       apple: 0,
@@ -139,9 +138,8 @@
       banana: { price: 200 },
       durian: 100
     };
-    deepEqual({"apple":0,"banana":{"weight":52,"price":200},"cherry":97,"durian":100}, this.config.extend(true, object1, object2), 'okay');
+    deepEqual({"apple":0,"banana":{"price":200,"weight":52},"cherry":97,"durian":100}, this.config.extend(true, object1, object2), 'okay');
   });
-  */
 
   test('test extend - Merge defaults and options, without modifying defaults', function() {
     var defaults = { validate: false, limit: 5, name: "foo" };
@@ -152,6 +150,20 @@
     deepEqual({"validate":true,"limit":5,"name":"bar"}, settings);
   });
 
+  test('test css', function() {
+    this.config.css('main.css');
+    equal(_$('link[href*="main.css"]').length, 1, 'okay');
+  });
 
+  test('test js', function() {
+    this.config.js('main.js');
+    equal(_$('script[src*="main.js"]').length, 1, 'okay');
+  });
 
-}(this));
+  test('test tagHead', function() {
+    this.config.tagHead(document.createElement("span"), "prepend");
+    ok(1);
+    //equal(_$('script[src*="main.js"]').length, 1, 'okay');
+  });
+
+}(this, jQuery));
